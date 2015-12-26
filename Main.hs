@@ -12,8 +12,11 @@ bmpList = [("bordervert.bmp", Nothing),
 	   ("headup.bmp",     Nothing),
 	   ("headleft.bmp",   Nothing),
 	   ("headdown.bmp",   Nothing),
-	   ("headrigth.bmp",  Nothing),
-	   ("tail.bmp",       Nothing)]
+	   ("headright.bmp",  Nothing),
+	   ("tail.bmp",       Nothing),
+	   ("apple.bmp",      Nothing),
+	   ("start.bmp",      Nothing),
+	   ("finish.bmp",     Nothing)]
 
 tileSize :: Size
 tileSize = 30.0
@@ -61,6 +64,17 @@ generateHead = object "head" pic True headPos (0,speed) NoObjectAttribute
   where
     pic = Tex (tileSize, tileSize) 3
 
+generateFood :: NibblesObject
+generateFood = object "food" pic True (0,0) (0,0) NoObjectAttribute
+  where
+    pic = Tex (tileSize, tileSize) 8
+
+generateMessage :: [NibblesObject]
+generateMessage = [(object "start" picSt True (395,300) (0,0) NoObjectAttribute), (object "finish" picOv True (395,300) (0,0) NoObjectAttribute)]
+  where
+    picSt = Tex (300, 100) 9
+    picOv = Tex (300, 100) 10
+
 generateAsleepTail :: Int -> ObjectPicture -> [NibblesObject]
 generateAsleepTail n pic
   | n == 2 = []
@@ -91,7 +105,11 @@ main = do
                        , header = "Nibbles"
                        }
     let gameMap = tileMap Main.map tileSize tileSize
+    let objects = [(objectGroup "messages" generateMessage),
+                   (objectGroup "head"     [generateHead] ),
+                   (objectGroup "food"     [generateFood] ),
+                   (objectGroup "tail"     generateTail   )]
     let bindings = [(Char 'q', Press, \_ _ -> funExit)]
     bmpList' <- mapM (\(a,b) -> do { a' <- getDataFileName ("Nibbles/"++a); return (a', b)}) bmpList
     funInit (initialPosition config, initialSize config, header config)
-                gameMap [] () () bindings (return()) Idle bmpList'
+                gameMap objects () () bindings (return()) Idle bmpList'
