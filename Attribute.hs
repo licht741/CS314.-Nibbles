@@ -10,6 +10,8 @@ type Position = (GLdouble, GLdouble)
 type Size = GLdouble
 type Speed = GLdouble
 
+data Direction = Left | Right | Up | Down deriving (Eq)
+
 data NibblesProperties = GA StepTime Size Attribute.Position CurrentScore
 
 data State = GameEnabled | GameDisabled
@@ -17,7 +19,7 @@ data State = GameEnabled | GameDisabled
 data ObjectProperties = NoObjectAttribute | Tail Int
 data TileAttribute = NoTileAttribute
 
-type NibblesActionIO a = IOGame NibblesProperties ObjectProperties State TileAttribute a
+type NibblesAction a = IOGame NibblesProperties ObjectProperties State TileAttribute a
 type NibblesObject = GameObject ObjectProperties
 type NibblesTile = Tile TileAttribute
 type GameMap = TileMatrix TileAttribute
