@@ -10,7 +10,7 @@ type Position = (GLdouble, GLdouble)
 type Size = GLdouble
 type Speed = GLdouble
 
-data NibblesProperties = GA StepTime Size Position CurrentScore
+data NibblesProperties = GA StepTime Size Attribute.Position CurrentScore
 
 data State = GameEnabled | GameDisabled
 
