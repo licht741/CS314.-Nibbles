@@ -76,9 +76,6 @@ gameCycle' Start = do
   enableGameFlags
   snakeHead <- findObject "head" "head"
   setObjectAsleep False snakeHead
-  setObjectPosition headPos snakeHead
-  setObjectSpeed (0.0,speed) snakeHead
-  setObjectCurrentPicture 3 snakeHead
   destroyObject level
   setGameAttribute (GA 0 size prevHeadPosition currentScore)
 gameCycle' Level = do
@@ -272,7 +269,7 @@ main = do
     bmpList' <- mapM (\(a,b) -> do { a' <- getDataFileName ("Nibbles/"++a); return (a', b)}) bmpList
     let wConf = (initialPosition config, initialSize config, header config)
     -- data NibblesProperties = GA StepTime Size Attribute.Position CurrentScore
-    let gameAttribute = GA 0 2 (3,3) 0
+    let gameAttribute = GA 0 2 headPos 0
     funInit wConf gameMap objects Start gameAttribute bindings gameCycle (Timer 150) bmpList'
     -- funInit
     --          gameMap
