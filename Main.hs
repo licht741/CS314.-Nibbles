@@ -41,33 +41,6 @@ defaultTimer = 10
 speed :: Speed
 speed = 30.0
 
-h,v,f :: NibblesTile
-h = (1, True,  0.0, NoTileAttribute)
-v = (0, True,  0.0, NoTileAttribute)
-f = (2, False, 0.0, NoTileAttribute)
-
-map :: Attribute.GameMap
-map =  [[h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h],
-        [v,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,v],
-        [v,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,v],
-        [v,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,v],
-        [v,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,v],
-        [v,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,v],
-        [v,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,v],
-        [v,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,v],
-        [v,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,v],
-        [v,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,v],
-        [v,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,v],
-        [v,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,v],
-        [v,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,v],
-        [v,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,v],
-        [v,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,v],
-        [v,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,v],
-        [v,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,v],
-        [v,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,v],
-        [v,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,v],
-        [h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h]]
-
 gameCycle :: NibblesAction ()
 gameCycle = do
   gameState <- getGameState
@@ -79,9 +52,13 @@ startCycle 0 = do
   setGameState Level
   enableGameFlags
   snakeHead <- findObject "head" "head"
+  tail0 <- findObject "tail0" "tail"
+  tail1 <- findObject "tail1" "tail"
   headPos <- createNewInitPos
   setObjectAsleep False snakeHead
   setObjectPosition headPos snakeHead
+  setObjectPosition (fst headPos, (snd headPos) - 30) tail0
+  setObjectPosition (fst headPos, (snd headPos) - 60) tail1
   setGameAttribute (GA 0 size prevHeadPosition currScore)
 startCycle timer = do
   (GA _ size prevHeadPosition currScore) <- getGameAttribute
@@ -306,7 +283,7 @@ main = do
                        , initialSize=(780, 600)
                        , header = "Nibbles"
                        }
-    let gameMap = tileMap Main.map tileSize tileSize
+    let gameMap = tileMap Attribute.map tileSize tileSize
     let objects = [(objectGroup "messages"  generateMessage),
                    (objectGroup "head"     [generateHead] ),
                    (objectGroup "food"     [generateFood] ),
