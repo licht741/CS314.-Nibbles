@@ -108,7 +108,7 @@ levelCycle 0 food snakeHead = do
 levelCycle _ food snakeHead = do
   col <- objectsCollision snakeHead food
   if col
-    then (do 
+    then (do
 	    (GA _ size prevHeadPosition currentScore) <- getGameAttribute
   	    snakeHeadPosition <- getObjectPosition snakeHead
   	    setGameAttribute (GA 0 (size + 1) snakeHeadPosition (currentScore + 1))
@@ -135,13 +135,19 @@ generateMessage = [(object "start" picSt True (395,300) (0,0) NoObjectAttribute)
     picSt = Tex (300, 100) 9
     picOv = Tex (300, 100) 10
 
-generateAsleepTail :: Int -> ObjectPicture -> [NibblesObject]
-generateAsleepTail n pic
-  | n == 2 = []
-  | otherwise = (object ("tail"++(show n)) pic True (0,0) (0,0) (Tail 0)) : (generateAsleepTail (n - 1) pic)
+generateAsleepTail :: Int -> Int -> ObjectPicture -> [NibblesObject]
+generateAsleepTail n m pic
+  | n > m = []
+  | otherwise = (object ("tail"++(show n)) pic True (0,0) (0,0) (Tail 0)) : (generateAsleepTail (n + 1) m pic)
 
+-- createTail = let picTail = Tex (tileSize,tileSize) 10
+            --  in (object "tail0"  picTail False tail0Pos (0,0) (Tail 0)):
+            --     (object "tail1"  picTail False tail1Pos (0,0) (Tail 1)):
+            --     (createAsleepTails initTailSize (initTailSize + maxFood - 1) picTail)
 generateTail :: [NibblesObject]
-generateTail = (object "tail0" pic False tail0Pos (0,0) (Tail 0)):(object "tail1" pic False tail1Pos (0,0) (Tail 1)):(generateAsleepTail initTailSize pic)
+generateTail = (object "tail0" pic False tail0Pos (0,0) (Tail 0)):
+                (object "tail1" pic False tail1Pos (0,0) (Tail 1)):
+                (generateAsleepTail initTailSize (initTailSize + 99) pic)
   where
       pic = Tex (tileSize, tileSize) 7
 
@@ -217,15 +223,21 @@ checkSnakeCollision snakeHead = do
                  disableObjectsMoving
                  setGameAttribute (GA 0 0 (0,0) 0))
         else return ()
---
--- getAliveTails :: [NibblesObject] -> [NibblesObject] -> NibblesAction [NibblesObject]
--- getAliveTails _ t = return t
 
 getAsleepTail ::  [NibblesObject] ->  NibblesAction NibblesObject
-getAsleepTail _ = error "the impossible has happened!"
+getAsleepTail [] = error "the impossible has happened!"
+getAsleepTail (o:os) = do
+  sleeping <- getObjectAsleep o
+  if sleeping
+    then return o
+    else getAsleepTail os
 
 addTailNumber :: [NibblesObject] -> NibblesAction ()
-addTailNumber _ = return ()
+addTailNumber [] = return ()
+addTailNumber (a:as) = do
+  (Tail n) <- getObjectAttribute a
+  setObjectAttribute (Tail (n + 1)) a
+  addTailNumber as
 
 addTail :: (GLdouble,GLdouble) -> NibblesAction ()
 addTail presentHeadPos = do
@@ -274,9 +286,3 @@ main = do
     -- data NibblesProperties = GA StepTime Size Attribute.Position CurrentScore
     let gameAttribute = GA 0 2 (3,3) 0
     funInit wConf gameMap objects Start gameAttribute bindings gameCycle (Timer 150) bmpList'
-    -- funInit
-    --          gameMap
-    --          objects
-    --          ()
-    --          ()
-    --          bindings (return()) Idle bmpList'
