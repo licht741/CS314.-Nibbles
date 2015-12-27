@@ -23,10 +23,16 @@ bmpList = [("bordervert.bmp", Nothing),
 tileSize :: GLdouble
 tileSize = 30.0
 
-headPos, tail0Pos, tail1Pos :: Attribute.Position
-headPos = (75.0,105.0)
-tail0Pos = (75.0,75.0)
-tail1Pos = (75.0,45.0)
+createNewInitPos :: NibblesAction Attribute.Position
+createNewInitPos = do
+  x <- randomInt(1, 18)
+  y <- randomInt(3, 22)
+  mapPositionOk <- checkMapPosition (x,y)
+  if mapPositionOk
+    then (return (toPixelCoord y, toPixelCoord x))
+    else createNewInitPos
+  where
+    toPixelCoord a = (tileSize/2) + (fromIntegral a) * tileSize
 
 initTailSize, defaultTimer:: Int
 initTailSize = 2
@@ -73,7 +79,9 @@ startCycle 0 = do
   setGameState Level
   enableGameFlags
   snakeHead <- findObject "head" "head"
+  headPos <- createNewInitPos
   setObjectAsleep False snakeHead
+  setObjectPosition headPos snakeHead
   setGameAttribute (GA 0 size prevHeadPosition currScore)
 startCycle timer = do
   (GA _ size prevHeadPosition currScore) <- getGameAttribute
@@ -123,7 +131,7 @@ levelCycle _ food snakeHead = do
             moveTail snakeHeadPosition)
 
 generateHead :: NibblesObject
-generateHead = object "head" pic True headPos (0,speed) NoObjectAttribute
+generateHead = object "head" pic True (0,0) (0,speed) NoObjectAttribute
   where
     pic = Tex (tileSize, tileSize) 3
 
@@ -148,8 +156,8 @@ generateAsleepTail n m pic
             --     (object "tail1"  picTail False tail1Pos (0,0) (Tail 1)):
             --     (createAsleepTails initTailSize (initTailSize + maxFood - 1) picTail)
 generateTail :: [NibblesObject]
-generateTail = (object "tail0" pic False tail0Pos (0,0) (Tail 0)):
-                (object "tail1" pic False tail1Pos (0,0) (Tail 1)):
+generateTail = (object "tail0" pic False (0,0) (0,0) (Tail 0)):
+                (object "tail1" pic False (0,0) (0,0) (Tail 1)):
                 (generateAsleepTail initTailSize (initTailSize + 99) pic)
   where
       pic = Tex (tileSize, tileSize) 7
@@ -286,10 +294,6 @@ turn Attribute.Down _ _ = do
         then do return ()
         else do turn' (0, -speed) 4
 
--- turn dir _ _
---     | dir == Attribute.Up = turn' (0, speed) 3
---     | dir == Attribute.Down = turn' (0, -speed) 5
-
 turn' :: (Speed, Speed) -> Int -> NibblesAction ()
 turn' (s1, s2) ind = do
     snakeHead <- findObject "head" "head"
@@ -303,10 +307,10 @@ main = do
                        , header = "Nibbles"
                        }
     let gameMap = tileMap Main.map tileSize tileSize
-    let objects = [(objectGroup "messages" generateMessage),
+    let objects = [(objectGroup "messages"  generateMessage),
                    (objectGroup "head"     [generateHead] ),
                    (objectGroup "food"     [generateFood] ),
-                   (objectGroup "tail"     generateTail   )]
+                   (objectGroup "tail"     (generateTail))]
 
 
     let bindings = [(Char 'q', Press, \_ _ -> funExit),
@@ -318,5 +322,5 @@ main = do
     bmpList' <- mapM (\(a,b) -> do { a' <- getDataFileName ("Nibbles/"++a); return (a', b)}) bmpList
     let wConf = (initialPosition config, initialSize config, header config)
     -- data NibblesProperties = GA StepTime Size Attribute.Position CurrentScore
-    let gameAttribute = GA defaultTimer 2 headPos 0
+    let gameAttribute = GA defaultTimer 2 (0,0) 0
     funInit wConf gameMap objects Start gameAttribute bindings gameCycle (Timer 150) bmpList'
