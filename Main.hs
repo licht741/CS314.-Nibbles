@@ -5,6 +5,7 @@ import Graphics.UI.Fungen
 import Attribute
 import Paths_FunGEn (getDataFileName)
 import Graphics.Rendering.OpenGL (GLdouble)
+import Text.Printf
 
 bmpList :: FilePictureList
 bmpList = [("bordervert.bmp", Nothing),
@@ -90,7 +91,7 @@ gameCycle' Level = do
   food <- findObject "food" "food"
   snakeHead <- findObject "head" "head"
   levelCycle timer food snakeHead
---showScore
+  showScore
 gameCycle' Over = do
   disableMapDrawing
   gameover <- findObject "finish" "messages"
@@ -225,6 +226,11 @@ checkSnakeCollision snakeHead = do
                  disableObjectsMoving
                  setGameAttribute (GA 0 0 (0,0) 0))
         else return ()
+
+showScore :: NibblesAction ()
+showScore = do
+  (GA _ _ _ currScore) <- getGameAttribute
+  printOnScreen (printf "Score: %d" currScore) TimesRoman24 (40,8) 0.0 1.0 1.0
 
 getAsleepTail ::  [NibblesObject] ->  NibblesAction NibblesObject
 getAsleepTail [] = error "the impossible has happened!"
