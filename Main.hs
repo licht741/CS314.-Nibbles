@@ -23,9 +23,9 @@ tileSize :: GLdouble
 tileSize = 30.0
 
 headPos, tail0Pos, tail1Pos :: Attribute.Position
-headPos = (45.0,105.0)
-tail0Pos = (45.0,75.0)
-tail1Pos = (45.0,45.0)
+headPos = (75.0,105.0)
+tail0Pos = (75.0,75.0)
+tail1Pos = (75.0,45.0)
 
 initTailSize:: Int
 initTailSize = 2
@@ -107,24 +107,22 @@ levelCycle 0 food snakeHead = do
   moveTail snakeHeadPosition
 levelCycle _ food snakeHead = do
   col <- objectsCollision snakeHead food
-  checkLevelColision col food snakeHead
-
-checkLevelColision :: Bool -> NibblesObject -> NibblesObject -> NibblesAction ()
-checkLevelColision True food snakeHead = do
-  (GA _ size prevHeadPosition currentScore) <- getGameAttribute
-  snakeHeadPosition <- getObjectPosition snakeHead
-  setGameAttribute (GA 0 (size + 1) snakeHeadPosition (currentScore + 1))
-  addTail prevHeadPosition
-  setObjectAsleep True food
-chackLevelColision False _ snakeHead = do
-  checkSnakeCollision snakeHead
-  snakeHeadPosition <- getObjectPosition snakeHead
-  moveTail snakeHeadPosition
+  if col
+    then (do 
+	    (GA _ size prevHeadPosition currentScore) <- getGameAttribute
+  	    snakeHeadPosition <- getObjectPosition snakeHead
+  	    setGameAttribute (GA 0 (size + 1) snakeHeadPosition (currentScore + 1))
+  	    addTail prevHeadPosition
+  	    setObjectAsleep True food)
+    else (do
+            checkSnakeCollision snakeHead
+            snakeHeadPosition <- getObjectPosition snakeHead
+            moveTail snakeHeadPosition)
 
 generateHead :: NibblesObject
 generateHead = object "head" pic True headPos (0,speed) NoObjectAttribute
   where
-        pic = Tex (tileSize, tileSize) 3
+    pic = Tex (tileSize, tileSize) 3
 
 generateFood :: NibblesObject
 generateFood = object "food" pic True (0,0) (0,0) NoObjectAttribute
@@ -252,8 +250,8 @@ turn' (s1, s2) ind = do
     setObjectCurrentPicture ind snakeHead
     setObjectSpeed (s1,s2) snakeHead
 
-turnUp :: Modifiers -> Graphics.UI.Fungen.Position -> NibblesAction ()
-turnUp m p = turn Up m p
+turnRight :: Modifiers -> Graphics.UI.Fungen.Position -> NibblesAction ()
+turnRight m p = turn Attribute.Right m p
 
 main = do
     let config = WindowConfig{
@@ -269,7 +267,7 @@ main = do
 
 
     let bindings = [(Char 'q', Press, \_ _ -> funExit),
-                    (SpecialKey KeyUp, Press, turnUp)]
+                    (SpecialKey KeyRight, Press, turnRight)]
 
     bmpList' <- mapM (\(a,b) -> do { a' <- getDataFileName ("Nibbles/"++a); return (a', b)}) bmpList
     let wConf = (initialPosition config, initialSize config, header config)
