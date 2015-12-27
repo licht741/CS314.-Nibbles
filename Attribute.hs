@@ -7,11 +7,15 @@ import Graphics.Rendering.OpenGL (GLdouble)
 type StepTime = Int
 type CurrentScore = Int
 type Position = (GLdouble, GLdouble)
-type Size = GLdouble
+--type Size = GLdouble
+-- type Size = GLdouble
+type Size = Int
 type Speed = GLdouble
 
 data Direction = Left | Right | Up | Down deriving (Eq)
 
+-- gameAttribute =     GA 	defaultTimer maxFood initTailSize    initPos 		 0
+--data GameAttribute = GA       Int 		Int 	Int 	(GLdouble,GLdouble) Int
 data NibblesProperties = GA StepTime Size Attribute.Position CurrentScore
 
 data State = GameEnabled | GameDisabled

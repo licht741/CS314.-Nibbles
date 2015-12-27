@@ -4,21 +4,22 @@ import Config
 import Graphics.UI.Fungen
 import Attribute
 import Paths_FunGEn (getDataFileName)
+import Graphics.Rendering.OpenGL (GLdouble)
 
 bmpList :: FilePictureList
 bmpList = [("bordervert.bmp", Nothing),
-           ("borderhor.bmp",  Nothing),
-	   ("field.bmp",      Nothing),
-	   ("headup.bmp",     Nothing),
-	   ("headleft.bmp",   Nothing),
-	   ("headdown.bmp",   Nothing),
-	   ("headright.bmp",  Nothing),
-	   ("tail.bmp",       Nothing),
-	   ("apple.bmp",      Nothing),
-	   ("start.bmp",      Nothing),
-	   ("finish.bmp",     Nothing)]
+        ("borderhor.bmp",  Nothing),
+        ("field.bmp",      Nothing),
+        ("headup.bmp",     Nothing),
+        ("headleft.bmp",   Nothing),
+        ("headdown.bmp",   Nothing),
+        ("headright.bmp",  Nothing),
+        ("tail.bmp",       Nothing),
+        ("apple.bmp",      Nothing),
+        ("start.bmp",      Nothing),
+        ("finish.bmp",     Nothing)]
 
-tileSize :: Size
+tileSize :: GLdouble
 tileSize = 30.0
 
 headPos, tail0Pos, tail1Pos :: Attribute.Position
@@ -58,11 +59,11 @@ map =  [[h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h],
         [v,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,v],
         [v,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,v],
         [h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h]]
- 
+
 generateHead :: NibblesObject
 generateHead = object "head" pic True headPos (0,speed) NoObjectAttribute
   where
-    pic = Tex (tileSize, tileSize) 3
+        pic = Tex (tileSize, tileSize) 3
 
 generateFood :: NibblesObject
 generateFood = object "food" pic True (0,0) (0,0) NoObjectAttribute
@@ -87,16 +88,59 @@ generateTail = (object "tail0" pic False tail0Pos (0,0) (Tail 0)):(object "tail1
 
 turn :: Direction -> Modifiers -> Graphics.UI.Fungen.Position -> NibblesAction ()
 turn dir _ _
-  | dir == Attribute.Left = turn' (-speed, 0) 4 
+  | dir == Attribute.Left = turn' (-speed, 0) 4
   | dir == Attribute.Right = turn' (speed, 0) 6
-  | dir == Attribute.Up = turn' (0, speed) 3 
-  | dir == Attribute.Down = turn' (0, -speed) 5 
+  | dir == Attribute.Up = turn' (0, speed) 3
+  | dir == Attribute.Down = turn' (0, -speed) 5
 
 turn' :: (Speed, Speed) -> Int -> NibblesAction()
 turn' (s1, s2) ind = do
   snakeHead <- findObject "head" "head"
   setObjectCurrentPicture ind snakeHead
   setObjectSpeed (s1,s2) snakeHead
+
+moveTail :: Attribute.Position -> NibblesAction()
+moveTail headPosition = do
+    -- GA StepTime Size Attribute.Position CurrentScore
+    (GA timer size prevHeadPosition currentScore) <- getGameAttribute
+    tails <- getObjectsFromGroup "tail"
+    aliveTails <- getAliveTails tails []
+    lastTail <- findLastTail aliveTails
+    setObjectPosition headPosition lastTail
+    setGameAttribute (GA timer size headPosition currentScore)
+    changeTailsAttribute size aliveTails
+
+getAliveTails :: [NibblesObject] -> [NibblesObject] -> NibblesAction [NibblesObject]
+getAliveTails [] t = return t
+getAliveTails (o:os) t = do
+    sleeping <- getObjectAsleep o
+    if sleeping
+        then getAliveTails os t
+        else getAliveTails os (o:t)
+--
+-- changeTailsAttribute :: Int -> [NibblesObject] -> NibblesAction ()
+-- changeTailsAttribute _ [] = return ()
+-- changeTailsAttribute tailSize (a:as) = do
+--     setObjectAttribute (Tail (mod (n + 1) tailSize)) a
+--     Tail n <- getObjectAttribute a
+--     changeTailsAttribute tailSize as
+
+changeTailsAttribute :: Int -> [NibblesObject] -> NibblesAction ()
+changeTailsAttribute _ [] = return ()
+changeTailsAttribute tailSize (a:as) = do
+  Tail n <- getObjectAttribute a
+  setObjectAttribute (Tail (mod (n + 1) tailSize)) a
+  changeTailsAttribute tailSize as
+
+findLastTail :: [NibblesObject] -> NibblesAction NibblesObject
+findLastTail [] = error "the impossible has happened!"
+findLastTail (t1:[]) = return t1
+findLastTail (t1:t2:ts) = do
+    (Tail na) <- getObjectAttribute t1
+    (Tail nb) <- getObjectAttribute t2
+    if (na > nb)
+        then findLastTail (t1:ts)
+        else findLastTail (t2:ts)
 
 main = do
     let config = WindowConfig{
