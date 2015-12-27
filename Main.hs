@@ -60,14 +60,15 @@ map =  [[h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h],
         [v,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,v],
         [h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h]]
 
-{--gameCycle :: NibblesAction ()
+gameCycle :: NibblesAction ()
 gameCycle = do
-  (GA timer size prevHeadPosition currentScore) <- getGameAttribute
+  --(GA timer size prevHeadPosition currentScore) <- getGameAttribute
   gameState <- getGameState
   gameCycle' gameState
 
 gameCycle' :: State -> NibblesAction ()
 gameCycle' Start = do
+  (GA _ size prevHeadPosition currentScore) <- getGameAttribute
   disableGameFlags
   level <- findObject "start" "messages"
   drawObject level
@@ -78,9 +79,10 @@ gameCycle' Start = do
   setObjectPosition headPos snakeHead
   setObjectSpeed (0.0,speed) snakeHead
   setObjectCurrentPicture 3 snakeHead
-  setGameAttribute (GA 0 tailSize previousHeadPos score)
   destroyObject level
+  setGameAttribute (GA 0 size prevHeadPosition currentScore)
 gameCycle' Level = do
+  (GA timer _ _ _) <- getGameAttribute
   food <- findObject "food" "food"
   snakeHead <- findObject "head" "head"
   levelCycle timer food snakeHead
@@ -94,10 +96,12 @@ gameCycle' Over = do
 
 levelCycle :: StepTime -> NibblesObject -> NibblesObject -> NibblesAction ()
 levelCycle 0 food snakeHead = do
+  (GA _ size prevHeadPosition currentScore) <- getGameAttribute
   newPosition <- createNewFoodPosition
   setObjectPosition newPosition food
+  newFood <- findObject "food" "food"
   setObjectAsleep False newFood
-  setGameAttribute (GA 1 tailSize previousHeadPos score)
+  setGameAttribute (GA 1 size prevHeadPosition currentScore)
   checkSnakeCollision snakeHead
   snakeHeadPosition <- getObjectPosition snakeHead
   moveTail snakeHeadPosition
@@ -107,14 +111,15 @@ levelCycle _ food snakeHead = do
 
 checkLevelColision :: Bool -> NibblesObject -> NibblesObject -> NibblesAction ()
 checkLevelColision True food snakeHead = do
+  (GA _ size prevHeadPosition currentScore) <- getGameAttribute
   snakeHeadPosition <- getObjectPosition snakeHead
-  setGameAttribute (GA 0 (tailSize + 1) snakeHeadPosition (score + 1))
-  addTail previousHeadPos
+  setGameAttribute (GA 0 (size + 1) snakeHeadPosition (currentScore + 1))
+  addTail prevHeadPosition
   setObjectAsleep True food
-chackLevelColision False food snakeHead = do
-  checkSnakeColision snakeHead
+chackLevelColision False _ snakeHead = do
+  checkSnakeCollision snakeHead
   snakeHeadPosition <- getObjectPosition snakeHead
-  moveTail snakeHeadPosition--}
+  moveTail snakeHeadPosition
 
 generateHead :: NibblesObject
 generateHead = object "head" pic True headPos (0,speed) NoObjectAttribute
@@ -158,7 +163,7 @@ turn' (s1, s2) ind = do
 moveTail :: Attribute.Position -> NibblesAction()
 moveTail headPosition = do
     -- GA StepTime Size Attribute.Position CurrentScore
-    (GA timer size prevHeadPosition currentScore) <- getGameAttribute
+    (GA timer size _ currentScore) <- getGameAttribute
     tails <- getObjectsFromGroup "tail"
     aliveTails <- getAliveTails tails []
     lastTail <- findLastTail aliveTails
@@ -197,6 +202,55 @@ findLastTail (t1:t2:ts) = do
     if (na > nb)
         then findLastTail (t1:ts)
         else findLastTail (t2:ts)
+
+createNewFoodPosition :: NibblesAction (GLdouble,GLdouble)
+createNewFoodPosition = do
+    x <- randomInt (1,18)
+    y <- randomInt (1,24)
+    mapPositionOk <- checkMapPosition (x,y)
+    tails <- getObjectsFromGroup "tail"
+    tailPositionNotOk <- pointsObjectListCollision (toPixelCoord y) (toPixelCoord x) tileSize tileSize tails
+    if (mapPositionOk && not tailPositionNotOk)
+        then (return (toPixelCoord y,toPixelCoord x))
+        else createNewFoodPosition
+    where toPixelCoord a = (tileSize/2) + (fromIntegral a) * tileSize
+
+checkMapPosition :: (Int,Int) -> NibblesAction Bool
+checkMapPosition (x,y) = do
+    mapTile <- getTileFromIndex (x,y)
+    return (not (getTileBlocked mapTile))
+
+checkSnakeCollision :: NibblesObject -> NibblesAction ()
+checkSnakeCollision snakeHead = do
+    headPos <- getObjectPosition snakeHead
+    tile <- getTileFromWindowPosition headPos
+    tails <- getObjectsFromGroup "tail"
+    col <- objectListObjectCollision tails snakeHead
+    if ( (getTileBlocked tile) || col)
+        then (do setGameState Over
+                 disableObjectsDrawing
+                 disableObjectsMoving
+                 setGameAttribute (GA 0 0 (0,0) 0))
+        else return ()
+--
+-- getAliveTails :: [NibblesObject] -> [NibblesObject] -> NibblesAction [NibblesObject]
+-- getAliveTails _ t = return t
+
+getAsleepTail ::  [NibblesObject] ->  NibblesAction NibblesObject
+getAsleepTail _ = error "the impossible has happened!"
+
+addTailNumber :: [NibblesObject] -> NibblesAction ()
+addTailNumber _ = return ()
+
+addTail :: (GLdouble,GLdouble) -> NibblesAction ()
+addTail presentHeadPos = do
+    tails <- getObjectsFromGroup "tail"
+    aliveTails <- getAliveTails tails []
+    asleepTail <-  getAsleepTail tails
+    setObjectAsleep False asleepTail
+    setObjectPosition presentHeadPos asleepTail
+    setObjectAttribute (Tail 0) asleepTail
+    addTailNumber aliveTails
 
 main = do
     let config = WindowConfig{
