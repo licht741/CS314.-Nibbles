@@ -147,19 +147,6 @@ generateTail = (object "tail0" pic False tail0Pos (0,0) (Tail 0)):(object "tail1
   where
       pic = Tex (tileSize, tileSize) 7
 
-turn :: Direction -> Modifiers -> Graphics.UI.Fungen.Position -> NibblesAction ()
-turn dir _ _
-  | dir == Attribute.Left = turn' (-speed, 0) 4
-  | dir == Attribute.Right = turn' (speed, 0) 6
-  | dir == Attribute.Up = turn' (0, speed) 3
-  | dir == Attribute.Down = turn' (0, -speed) 5
-
-turn' :: (Speed, Speed) -> Int -> NibblesAction ()
-turn' (s1, s2) ind = do
-  snakeHead <- findObject "head" "head"
-  setObjectCurrentPicture ind snakeHead
-  setObjectSpeed (s1,s2) snakeHead
-
 moveTail :: Attribute.Position -> NibblesAction()
 moveTail headPosition = do
     -- GA StepTime Size Attribute.Position CurrentScore
@@ -252,6 +239,22 @@ addTail presentHeadPos = do
     setObjectAttribute (Tail 0) asleepTail
     addTailNumber aliveTails
 
+turn :: Direction -> Modifiers -> Graphics.UI.Fungen.Position -> NibblesAction ()
+turn dir _ _
+    | dir == Attribute.Left = turn' (-speed, 0) 4
+    | dir == Attribute.Right = turn' (speed, 0) 6
+    | dir == Attribute.Up = turn' (0, speed) 3
+    | dir == Attribute.Down = turn' (0, -speed) 5
+
+turn' :: (Speed, Speed) -> Int -> NibblesAction ()
+turn' (s1, s2) ind = do
+    snakeHead <- findObject "head" "head"
+    setObjectCurrentPicture ind snakeHead
+    setObjectSpeed (s1,s2) snakeHead
+
+turnUp :: Modifiers -> Graphics.UI.Fungen.Position -> NibblesAction ()
+turnUp m p = turn Up m p
+
 main = do
     let config = WindowConfig{
                          initialPosition=(100,100)
@@ -263,7 +266,19 @@ main = do
                    (objectGroup "head"     [generateHead] ),
                    (objectGroup "food"     [generateFood] ),
                    (objectGroup "tail"     generateTail   )]
-    let bindings = [(Char 'q', Press, \_ _ -> funExit)]
+
+
+    let bindings = [(Char 'q', Press, \_ _ -> funExit),
+                    (SpecialKey KeyUp, Press, turnUp)]
+
     bmpList' <- mapM (\(a,b) -> do { a' <- getDataFileName ("Nibbles/"++a); return (a', b)}) bmpList
-    funInit (initialPosition config, initialSize config, header config)
-                gameMap objects () () bindings (return()) Idle bmpList'
+    let wConf = (initialPosition config, initialSize config, header config)
+    -- data NibblesProperties = GA StepTime Size Attribute.Position CurrentScore
+    let gameAttribute = GA 0 2 (3,3) 0
+    funInit wConf gameMap objects Start gameAttribute bindings gameCycle (Timer 150) bmpList'
+    -- funInit
+    --          gameMap
+    --          objects
+    --          ()
+    --          ()
+    --          bindings (return()) Idle bmpList'
