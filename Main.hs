@@ -119,7 +119,7 @@ levelCycle _ food snakeHead = do
             setObjectAsleep True food)
     else (do
             checkSnakeCollision snakeHead
-            snakeHeadPosition <- getObjectPosition snakeHead               
+            snakeHeadPosition <- getObjectPosition snakeHead
             moveTail snakeHeadPosition)
 
 generateHead :: NibblesObject
@@ -258,11 +258,37 @@ addTail presentHeadPos = do
     addTailNumber aliveTails
 
 turn :: Direction -> Modifiers -> Graphics.UI.Fungen.Position -> NibblesAction ()
-turn dir _ _
-    | dir == Attribute.Left = turn' (-speed, 0) 4
-    | dir == Attribute.Right = turn' (speed, 0) 6
-    | dir == Attribute.Up = turn' (0, speed) 3
-    | dir == Attribute.Down = turn' (0, -speed) 5
+turn Attribute.Left _ _ = do
+    snakeHead <- findObject "head" "head"
+    (speedByX, _) <- getObjectSpeed snakeHead
+    if speedByX > 0
+        then do return ()
+        else do turn' (-speed, 0) 4
+
+turn Attribute.Right _ _ = do
+    snakeHead <- findObject "head" "head"
+    (speedByX, _) <- getObjectSpeed snakeHead
+    if speedByX < 0
+        then do return ()
+        else do turn' (speed, 0) 4
+
+turn Attribute.Up _ _ = do
+    snakeHead <- findObject "head" "head"
+    (_, speedByY) <- getObjectSpeed snakeHead
+    if speedByY < 0
+        then do return ()
+        else do turn' (0, speed) 4
+
+turn Attribute.Down _ _ = do
+    snakeHead <- findObject "head" "head"
+    (_, speedByY) <- getObjectSpeed snakeHead
+    if speedByY > 0
+        then do return ()
+        else do turn' (0, -speed) 4
+
+-- turn dir _ _
+--     | dir == Attribute.Up = turn' (0, speed) 3
+--     | dir == Attribute.Down = turn' (0, -speed) 5
 
 turn' :: (Speed, Speed) -> Int -> NibblesAction ()
 turn' (s1, s2) ind = do
