@@ -63,25 +63,28 @@ map =  [[h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h],
 
 gameCycle :: NibblesAction ()
 gameCycle = do
-  --(GA timer size prevHeadPosition currentScore) <- getGameAttribute
   gameState <- getGameState
   gameCycle' gameState
 
+startCycle :: StepTime -> NibblesAction ()
+startCycle 0 = do
+  (GA _ size prevHeadPosition currScore) <- getGameAttribute
+  setGameState Level
+  enableGameFlags
+  snakeHead <- findObject "head" "head"
+  setObjectAsleep False snakeHead
+  setGameAttribute (GA 0 size prevHeadPosition currScore)
+startCycle timer = do
+  (GA _ size prevHeadPosition currScore) <- getGameAttribute
+  setGameAttribute (GA (timer - 1) size prevHeadPosition currScore)
+  
 gameCycle' :: State -> NibblesAction ()
 gameCycle' Start = do
-  (GA timer size prevHeadPosition currentScore) <- getGameAttribute
+  (GA timer _ _ _) <- getGameAttribute
   disableGameFlags
   level <- findObject "start" "messages"
   drawObject level
-  if (timer == 0)
-      then (do
-	      setGameState Level
-              enableGameFlags
-              snakeHead <- findObject "head" "head"
-              setObjectAsleep False snakeHead
-              setGameAttribute (GA defaultTimer size prevHeadPosition currentScore)
-	      destroyObject level)
-      else  setGameAttribute (GA (timer - 1) size prevHeadPosition currentScore)
+  startCycle timer
 gameCycle' Level = do
   (GA timer _ _ _) <- getGameAttribute
   food <- findObject "food" "food"
@@ -110,7 +113,7 @@ levelCycle _ food snakeHead = do
     then (do
 	    (GA _ size prevHeadPosition currentScore) <- getGameAttribute
   	    snakeHeadPosition <- getObjectPosition snakeHead
-  	    setGameAttribute (GA defaultTimer (size + 1) snakeHeadPosition (currentScore + 1))
+  	    setGameAttribute (GA 0 (size + 1) snakeHeadPosition (currentScore + 1))
             addTail prevHeadPosition
             setObjectAsleep True food)
     else (do
@@ -220,7 +223,7 @@ checkSnakeCollision snakeHead = do
         then (do setGameState Over
                  disableObjectsDrawing
                  disableObjectsMoving
-                 setGameAttribute (GA defaultTimer 0 (0,0) 0))
+                 setGameAttribute (GA 0 0 (0,0) 0))
         else return ()
 
 getAsleepTail ::  [NibblesObject] ->  NibblesAction NibblesObject
