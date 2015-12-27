@@ -252,9 +252,6 @@ turn' (s1, s2) ind = do
     setObjectCurrentPicture ind snakeHead
     setObjectSpeed (s1,s2) snakeHead
 
-turnUp :: Modifiers -> Graphics.UI.Fungen.Position -> NibblesAction ()
-turnUp m p = turn Up m p
-
 main = do
     let config = WindowConfig{
                          initialPosition=(100,100)
@@ -269,7 +266,10 @@ main = do
 
 
     let bindings = [(Char 'q', Press, \_ _ -> funExit),
-                    (SpecialKey KeyUp, Press, turnUp)]
+                    (SpecialKey KeyUp, Press, turn Up),
+                    (SpecialKey KeyLeft, Press, turn Attribute.Left),
+                    (SpecialKey KeyRight, Press, turn Attribute.Right),
+                    (SpecialKey KeyDown, Press, turn Down)]
 
     bmpList' <- mapM (\(a,b) -> do { a' <- getDataFileName ("Nibbles/"++a); return (a', b)}) bmpList
     let wConf = (initialPosition config, initialSize config, header config)
