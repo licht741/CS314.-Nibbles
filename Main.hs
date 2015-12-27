@@ -60,6 +60,62 @@ map =  [[h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h],
         [v,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,f,v],
         [h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h,h]]
 
+{--gameCycle :: NibblesAction ()
+gameCycle = do
+  (GA timer size prevHeadPosition currentScore) <- getGameAttribute
+  gameState <- getGameState
+  gameCycle' gameState
+
+gameCycle' :: State -> NibblesAction ()
+gameCycle' Start = do
+  disableGameFlags
+  level <- findObject "start" "messages"
+  drawObject level
+  setGameState Level
+  enableGameFlags
+  snakeHead <- findObject "head" "head"
+  setObjectAsleep False snakeHead
+  setObjectPosition headPos snakeHead
+  setObjectSpeed (0.0,speed) snakeHead
+  setObjectCurrentPicture 3 snakeHead
+  setGameAttribute (GA 0 tailSize previousHeadPos score)
+  destroyObject level
+gameCycle' Level = do
+  food <- findObject "food" "food"
+  snakeHead <- findObject "head" "head"
+  levelCycle timer food snakeHead
+--showScore
+gameCycle' Over = do
+  disableMapDrawing
+  gameover <- findObject "finish" "messages"
+  drawMap
+  drawObject gameover
+  funExit
+
+levelCycle :: StepTime -> NibblesObject -> NibblesObject -> NibblesAction ()
+levelCycle 0 food snakeHead = do
+  newPosition <- createNewFoodPosition
+  setObjectPosition newPosition food
+  setObjectAsleep False newFood
+  setGameAttribute (GA 1 tailSize previousHeadPos score)
+  checkSnakeCollision snakeHead
+  snakeHeadPosition <- getObjectPosition snakeHead
+  moveTail snakeHeadPosition
+levelCycle _ food snakeHead = do
+  col <- objectsCollision snakeHead food
+  checkLevelColision col food snakeHead
+
+checkLevelColision :: Bool -> NibblesObject -> NibblesObject -> NibblesAction ()
+checkLevelColision True food snakeHead = do
+  snakeHeadPosition <- getObjectPosition snakeHead
+  setGameAttribute (GA 0 (tailSize + 1) snakeHeadPosition (score + 1))
+  addTail previousHeadPos
+  setObjectAsleep True food
+chackLevelColision False food snakeHead = do
+  checkSnakeColision snakeHead
+  snakeHeadPosition <- getObjectPosition snakeHead
+  moveTail snakeHeadPosition--}
+
 generateHead :: NibblesObject
 generateHead = object "head" pic True headPos (0,speed) NoObjectAttribute
   where
@@ -93,7 +149,7 @@ turn dir _ _
   | dir == Attribute.Up = turn' (0, speed) 3
   | dir == Attribute.Down = turn' (0, -speed) 5
 
-turn' :: (Speed, Speed) -> Int -> NibblesAction()
+turn' :: (Speed, Speed) -> Int -> NibblesAction ()
 turn' (s1, s2) ind = do
   snakeHead <- findObject "head" "head"
   setObjectCurrentPicture ind snakeHead

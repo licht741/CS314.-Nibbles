@@ -18,7 +18,7 @@ data Direction = Left | Right | Up | Down deriving (Eq)
 --data GameAttribute = GA       Int 		Int 	Int 	(GLdouble,GLdouble) Int
 data NibblesProperties = GA StepTime Size Attribute.Position CurrentScore
 
-data State = GameEnabled | GameDisabled
+data State = Start | Level | Over
 
 data ObjectProperties = NoObjectAttribute | Tail Int
 data TileAttribute = NoTileAttribute
