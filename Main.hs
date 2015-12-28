@@ -57,6 +57,8 @@ startCycle 0 = do
   headPos <- createNewInitPos
   setObjectAsleep False snakeHead
   setObjectPosition headPos snakeHead
+  setObjectSpeed (0.0,speed) snakeHead
+  setObjectCurrentPicture 3 snakeHead
   setObjectPosition (fst headPos, (snd headPos) - 30) tail0
   setObjectPosition (fst headPos, (snd headPos) - 60) tail1
   setGameAttribute (GA 0 size prevHeadPosition currScore)
@@ -134,19 +136,19 @@ generateAsleepTail n m pic
             --     (createAsleepTails initTailSize (initTailSize + maxFood - 1) picTail)
 generateTail :: [NibblesObject]
 generateTail = (object "tail0" pic False (0,0) (0,0) (Tail 0)):
-                (object "tail1" pic False (0,0) (0,0) (Tail 1)):
-                (generateAsleepTail initTailSize (initTailSize + 99) pic)
+               (object "tail1" pic False (0,0) (0,0) (Tail 1)):
+               (generateAsleepTail initTailSize (initTailSize + 99) pic)
   where
       pic = Tex (tileSize, tileSize) 7
 
 moveTail :: Attribute.Position -> NibblesAction()
 moveTail headPosition = do
     -- GA StepTime Size Attribute.Position CurrentScore
-    (GA timer size _ currentScore) <- getGameAttribute
+    (GA timer size prevHeadPos currentScore) <- getGameAttribute
     tails <- getObjectsFromGroup "tail"
     aliveTails <- getAliveTails tails []
     lastTail <- findLastTail aliveTails
-    setObjectPosition headPosition lastTail
+    setObjectPosition prevHeadPos lastTail
     setGameAttribute (GA timer size headPosition currentScore)
     changeTailsAttribute size aliveTails
 
@@ -232,7 +234,7 @@ addTailNumber (a:as) = do
   setObjectAttribute (Tail (n + 1)) a
   addTailNumber as
 
-addTail :: (GLdouble,GLdouble) -> NibblesAction ()
+addTail :: Attribute.Position -> NibblesAction ()
 addTail presentHeadPos = do
     tails <- getObjectsFromGroup "tail"
     aliveTails <- getAliveTails tails []
@@ -255,21 +257,21 @@ turn Attribute.Right _ _ = do
     (speedByX, _) <- getObjectSpeed snakeHead
     if speedByX < 0
         then do return ()
-        else do turn' (speed, 0) 4
+        else do turn' (speed, 0) 6
 
 turn Attribute.Up _ _ = do
     snakeHead <- findObject "head" "head"
     (_, speedByY) <- getObjectSpeed snakeHead
     if speedByY < 0
         then do return ()
-        else do turn' (0, speed) 4
+        else do turn' (0, speed) 3
 
 turn Attribute.Down _ _ = do
     snakeHead <- findObject "head" "head"
     (_, speedByY) <- getObjectSpeed snakeHead
     if speedByY > 0
         then do return ()
-        else do turn' (0, -speed) 4
+        else do turn' (0, -speed) 5
 
 turn' :: (Speed, Speed) -> Int -> NibblesAction ()
 turn' (s1, s2) ind = do
