@@ -57,8 +57,6 @@ startCycle 0 = do
   headPos <- createNewInitPos
   setObjectAsleep False snakeHead
   setObjectPosition headPos snakeHead
-  setObjectSpeed (0.0,speed) snakeHead
-  setObjectCurrentPicture 3 snakeHead
   setObjectPosition (fst headPos, (snd headPos) - 30) tail0
   setObjectPosition (fst headPos, (snd headPos) - 60) tail1
   setGameAttribute (GA 0 size prevHeadPosition currScore)
